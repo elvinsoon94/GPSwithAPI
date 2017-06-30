@@ -1,33 +1,24 @@
 package com.example.nkwm87.myapplication;
 
 import android.Manifest;
-import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.location.Location;
-import android.location.LocationListener;
-import android.nfc.Tag;
-import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.location.Location;
 import android.util.Log;
-
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GoogleApiAvailability;
-import com.google.android.gms.common.GooglePlayServicesUtil;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.PendingResult;
-import com.google.android.gms.common.api.Status;
-import com.google.android.gms.location.FusedLocationProviderApi;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.tasks.OnSuccessListener;
-
 import android.widget.TextView;
 import android.widget.Button;
 import android.view.View;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.PendingResult;
+import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationListener;
 
 public class MainActivity extends AppCompatActivity implements LocationListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
@@ -53,27 +44,41 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
         if (!isGooglePlayServicesAvailable()) {
 
             Log.d(TAG, "Google PLay Service Not Available");
+        } else
+            Log.d(TAG, "Started.");
+            createLocationRequest();
+            mGoogleApiClient = new GoogleApiClient.Builder(this).addApi(LocationServices.API).addConnectionCallbacks(this).addOnConnectionFailedListener(this).build();
+            setContentView(R.layout.activity_main);
+            Button locationButton = (Button) findViewById(R.id.LocationButton);
+            locationButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    updateUI();
+                }
+            });
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        if (mGoogleApiClient != null) {
+            Log.d(TAG, "New Location..");
+            mGoogleApiClient.connect();
         }
-        Log.d(TAG, "Started.");
-        createLocationRequest();
-        mGoogleApiClient = new GoogleApiClient.Builder(this).addApi(LocationServices.API).addConnectionCallbacks(this).addOnConnectionFailedListener(this).build();
-        setContentView(R.layout.activity_main);
+    }
 
-
-        Button locationButton = (Button) findViewById(R.id.LocationButton);
-        locationButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                updateUI();
-            }
-        });
-
+    @Override
+    public void onStop(){
+        super.onStop();
+        Log.d(TAG,"Stop All Activity...");
+        mGoogleApiClient.disconnect();
     }
 
     private boolean isGooglePlayServicesAvailable() {
         GoogleApiAvailability apiAvailability = GoogleApiAvailability.getInstance();
         int status = apiAvailability.isGooglePlayServicesAvailable(this);
         if (status == ConnectionResult.SUCCESS) {
+            Log.d(TAG, "Google Play Services is Available and SUCCESS.");
             return true;
 
         } else {
@@ -83,16 +88,9 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
     }
 
     @Override
-    public void onStart() {
-        super.onStart();
-        if (mGoogleApiClient != null) {
-            Log.d(TAG, "Location Updated");
-            mGoogleApiClient.connect();
-        }
-    }
-
-    protected void stopLocationUpdates() {
-        LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, (com.google.android.gms.location.LocationListener) this);
+    public void onConnected(Bundle bundle) {
+        Log.d(TAG, "Connecting...");
+        startLocationUpdates();
     }
 
     protected void startLocationUpdates() {
@@ -104,16 +102,50 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
             //                                          int[] grantResults)
             // to handle the case where the user grants the permission. See the documentation
             // for ActivityCompat#requestPermissions for more details.
+            Log.d(TAG, "Permission is not Granted..");
             return;
         }
-        PendingResult<Status> pendingResult = LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, (com.google.android.gms.location.LocationListener) this);
+        PendingResult<Status> pendingResult = LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
+        Log.d(TAG, "Location is Updated...");
     }
-    
+
+    @Override
+    public void onConnectionSuspended(int i) {
+
+    }
+
+    @Override
+    public void onConnectionFailed(ConnectionResult connectionResult){}
+
+    @Override
+    public void onLocationChanged(Location location) {
+        mCurrentLocation = location;
+        Log.d(TAG, "Location Changed New");
+
+    }
+
+    private void updateUI(){
+        if (null != mCurrentLocation) {
+            String latitude = String.valueOf(mCurrentLocation.getLatitude());
+            String longitude = String.valueOf(mCurrentLocation.getLongitude());
+
+            Log.d(TAG, "Showing Coordinate");
+
+            TextView coordinate = (TextView) findViewById(R.id.coordinate);
+            coordinate.setText("Latitude:" + latitude + "\nLongitude:" + longitude);
+        } else {
+            Log.d(TAG, "Location is null.....");
+        }
+    }
 
     @Override
     protected void onPause() {
         super.onPause();
         stopLocationUpdates();
+    }
+
+    protected void stopLocationUpdates() {
+        LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
     }
 
     @Override
@@ -124,51 +156,4 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
         }
     }
 
-    public void onConnectionFailed(ConnectionResult connectionResult){}
-
-    @Override
-    public void onLocationChanged(Location location) {
-        mCurrentLocation = location;
-        Log.d(TAG, "Location Changed New");
-        updateUI();
-
-    }
-
-    private void updateUI(){
-        if (null != mCurrentLocation) {
-            String latitude = String.valueOf(mCurrentLocation.getLatitude());
-            String longitude = String.valueOf(mCurrentLocation.getLongitude());
-
-            Log.d(TAG, "Showing Coordinate");
-            TextView coordinate = (TextView) findViewById(R.id.coordinate);
-            coordinate.setText("Latitude:" + latitude + "\nLongitude:" + longitude);
-        } else {
-            Log.d(TAG, "Location is null.....");
-        }
-    }
-
-    @Override
-    public void onStatusChanged(String provider, int status, Bundle extras) {
-
-    }
-
-    @Override
-    public void onProviderEnabled(String provider) {
-
-    }
-
-    @Override
-    public void onProviderDisabled(String provider) {
-
-    }
-
-    @Override
-    public void onConnected(@Nullable Bundle bundle) {
-
-    }
-
-    @Override
-    public void onConnectionSuspended(int i) {
-
-    }
 }
