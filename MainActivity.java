@@ -1,8 +1,11 @@
 package com.example.nkwm87.myapplication;
 
 import android.Manifest;
+import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.os.Handler;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -10,6 +13,9 @@ import android.util.Log;
 import android.widget.TextView;
 import android.widget.Button;
 import android.view.View;
+//import android.widget.Toast;
+import android.widget.EditText;
+import android.widget.ImageButton;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
@@ -28,7 +34,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
     LocationRequest mLocationRequest;
     GoogleApiClient mGoogleApiClient;
     Location mCurrentLocation;
-
+    private Runnable finalUpdater;
+    private Handler timerHandler;
 
     protected void createLocationRequest() {
         mLocationRequest = new LocationRequest();
@@ -44,18 +51,62 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
         if (!isGooglePlayServicesAvailable()) {
 
             Log.d(TAG, "Google PLay Service Not Available");
-        } else
-            Log.d(TAG, "Started.");
-            createLocationRequest();
-            mGoogleApiClient = new GoogleApiClient.Builder(this).addApi(LocationServices.API).addConnectionCallbacks(this).addOnConnectionFailedListener(this).build();
-            setContentView(R.layout.activity_main);
-            Button locationButton = (Button) findViewById(R.id.LocationButton);
-            locationButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    updateUI();
-                }
-            });
+        }
+
+        Log.d(TAG, "Started.");
+        createLocationRequest();
+        mGoogleApiClient = new GoogleApiClient.Builder(this).addApi(LocationServices.API).addConnectionCallbacks(this).addOnConnectionFailedListener(this).build();
+        setContentView(R.layout.activity_main);
+        Log.d(TAG, "Waiting to be Clicked.");
+
+        Button locationButton = (Button) findViewById(R.id.LocationButton);
+        locationButton.setOnClickListener(new View.OnClickListener() {
+           @Override
+           public void onClick(View v) {
+               final EditText UpdateTime = (EditText) findViewById(R.id.UpdateTime);
+               String updateTime = UpdateTime.getText().toString();
+               final long time = Long.parseLong(updateTime);
+               Log.d(TAG, "Time:" +time);
+
+               timerHandler = new Handler();
+               finalUpdater = new Runnable() {
+                   @Override
+                   public void run() {
+                       updateUI();
+                       Log.d(TAG, "Delayed...");
+                       timerHandler.postDelayed(finalUpdater, time*1000);
+                   }
+               };
+               timerHandler.post(finalUpdater);
+
+           }
+       });
+
+        Button stopButton = (Button) findViewById(R.id.stopButton);
+        stopButton.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v){
+                timerHandler.removeCallbacks(finalUpdater);
+                Log.d(TAG, "Stop Constantly Update UI");
+            }
+        });
+
+        ImageButton MapButton = (ImageButton)findViewById(R.id.imageButton);
+        MapButton.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v){
+                Log.d(TAG, "Connecting to Google Map.");
+                Intent intent = new Intent(getContext(), MapsActivity.class);
+
+                intent.putExtra("latitude", mCurrentLocation.getLatitude());
+                intent.putExtra("longitude", mCurrentLocation.getLongitude());
+                startActivity(intent);
+            }
+        });
+    }
+
+    private Context getContext() {
+        return this;
     }
 
     @Override
@@ -71,7 +122,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
     public void onStop(){
         super.onStop();
         Log.d(TAG,"Stop All Activity...");
-        mGoogleApiClient.disconnect();
+        //mGoogleApiClient.disconnect();
+        //timerHandler.removeCallbacks(finalUpdater);
     }
 
     private boolean isGooglePlayServicesAvailable() {
@@ -126,13 +178,15 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
 
     private void updateUI(){
         if (null != mCurrentLocation) {
+
             String latitude = String.valueOf(mCurrentLocation.getLatitude());
             String longitude = String.valueOf(mCurrentLocation.getLongitude());
 
             Log.d(TAG, "Showing Coordinate");
-
             TextView coordinate = (TextView) findViewById(R.id.coordinate);
+            //Toast.makeText(this, "Latitude: \t" +latitude+ "\nLongitude: \t" + longitude, Toast.LENGTH_LONG).show();
             coordinate.setText("Latitude:" + latitude + "\nLongitude:" + longitude);
+
         } else {
             Log.d(TAG, "Location is null.....");
         }
