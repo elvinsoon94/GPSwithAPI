@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">My Application</string>
+    <string name="button_location">Show My Location</string>
+    <string name="coordinate">Location</string>
+    <string name="textView1">Update Every</string>
+    <string name="textView2">Seconds</string>
+    <string name="stop_text">Stop</string>
+    <string name="title_activity_maps">Map</string>
+    <string name="mapbutton">MapButton</string>
+</resources>
