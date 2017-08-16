@@ -48,14 +48,15 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        /** Check for the availability of Google Play Services **/
         if (!isGooglePlayServicesAvailable()) {
-
             Log.d(TAG, "Google PLay Service Not Available");
         }
 
         Log.d(TAG, "Started.");
         createLocationRequest();
-        mGoogleApiClient = new GoogleApiClient.Builder(this).addApi(LocationServices.API).addConnectionCallbacks(this).addOnConnectionFailedListener(this).build();
+        mGoogleApiClient = new GoogleApiClient.Builder(this).addApi(LocationServices.API).
+                addConnectionCallbacks(this).addOnConnectionFailedListener(this).build();   //adding new API for the location request
         setContentView(R.layout.activity_main);
         Log.d(TAG, "Waiting to be Clicked.");
 
@@ -64,17 +65,18 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
            @Override
            public void onClick(View v) {
                final EditText UpdateTime = (EditText) findViewById(R.id.UpdateTime);
-               String updateTime = UpdateTime.getText().toString();
+               String updateTime = UpdateTime.getText().toString(); //obtain the update time from the user input
                final long time = Long.parseLong(updateTime);
                Log.d(TAG, "Time:" +time);
 
+               /** Adding some delay to the update according to the time input **/
                timerHandler = new Handler();
                finalUpdater = new Runnable() {
                    @Override
                    public void run() {
                        updateUI();
                        Log.d(TAG, "Delayed...");
-                       timerHandler.postDelayed(finalUpdater, time*1000);
+                       timerHandler.postDelayed(finalUpdater, time*1000);   //update the location every few second depends on the user input
                    }
                };
                timerHandler.post(finalUpdater);
@@ -86,7 +88,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
         stopButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v){
-                timerHandler.removeCallbacks(finalUpdater);
+                timerHandler.removeCallbacks(finalUpdater); //stop update location
                 Log.d(TAG, "Stop Constantly Update UI");
             }
         });
@@ -100,7 +102,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
 
                 intent.putExtra("latitude", mCurrentLocation.getLatitude());
                 intent.putExtra("longitude", mCurrentLocation.getLongitude());
-                startActivity(intent);
+                startActivity(intent);  //sending the value of longitude and latitude to the MapsActivity
             }
         });
     }
@@ -145,8 +147,11 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
         startLocationUpdates();
     }
 
+    /** Update the location using the GPS of the phone **/
     protected void startLocationUpdates() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
             //    ActivityCompat#requestPermissions
             // here to request the missing permissions, and then overriding
@@ -157,7 +162,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
             Log.d(TAG, "Permission is not Granted..");
             return;
         }
-        PendingResult<Status> pendingResult = LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
+        PendingResult<Status> pendingResult = LocationServices.FusedLocationApi.
+                requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
         Log.d(TAG, "Location is Updated...");
     }
 
@@ -176,6 +182,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
 
     }
 
+    /** Displaying the info of longitude and latitude of the location **/
     private void updateUI(){
         if (null != mCurrentLocation) {
 

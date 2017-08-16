@@ -76,7 +76,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mGoogleApiClient.connect();
     }
 
-
+    /** Adjust some setting for the map displayed and connect to location service API **/
     @Override
     public void onConnected(@Nullable Bundle bundle) {
         mLocationRequest = new LocationRequest();
@@ -116,11 +116,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Log.d(TAG, "Updating the Location in Map.");
         double latitude = mLastLocation.getLatitude();
         double longitude = mLastLocation.getLongitude();
-        LatLng myCurrentLocation = new LatLng(latitude, longitude);
+        LatLng myCurrentLocation = new LatLng(latitude, longitude); //determining the location using the longitude and latitude retrieved from MainActivity
         mMap.addMarker(new MarkerOptions().position(myCurrentLocation).title("Marker"));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(myCurrentLocation));
 
         mMap.moveCamera(CameraUpdateFactory.newLatLng(myCurrentLocation));
-        mMap.animateCamera(CameraUpdateFactory.zoomTo(11));
+        mMap.animateCamera(CameraUpdateFactory.zoomTo(13));
     }
 }
